@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+
+$:.unshift File.expand_path("../../lib", __FILE__)
+require 'logfmt-logger'
+
+
+log = Logfmt::Logger.new STDOUT, formatter: Logfmt::Formatter.new(justify: true, level_key: "LEVEL")
+
+log.info "Hi"
+log.info "A" * 100, user_id: 1
+
+log.info "context", user_id: 1
+log.debug "line", user_id: 1
+log.debug "up", user_id: 1
+log.debug "Hello, World!", user_id: 1

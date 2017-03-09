@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+$:.unshift File.expand_path("../../lib", __FILE__)
+require 'logfmt-logger'
+require 'irb'
+
+SLog = Logfmt::Logger.new(STDOUT)
+MLog = Logfmt::Metrics.new(SLog)
+
+IRB.start
