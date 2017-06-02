@@ -1,11 +1,13 @@
 class Logfmt::Formatter
-  def initialize justify: false, level_key: :l, message_key: :msg, escape_strings: true, level_labels: Logger::SEV_LABEL, timestamp: true
+  def initialize justify: false, level_key: :l, message_key: :msg, escape_strings: true, level_labels: Logger::SEV_LABEL, timestamp: true, precision: 3
+
     @justify        = justify
     @level_key      = level_key
     @level_labels   = level_labels
     @message_key    = message_key
     @escape_strings = escape_strings
     @timestamp      = timestamp
+    @precision      = precision
 
     if @timestamp
       require 'time'
@@ -17,7 +19,7 @@ class Logfmt::Formatter
 
     if time = payload.delete(:time)
        if @timestamp
-         line << format(:time, time.getutc.iso8601)
+         line << format(:time, time.getutc.iso8601(@precision))
        end
     end
 
