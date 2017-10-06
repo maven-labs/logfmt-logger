@@ -15,6 +15,7 @@ class Logfmt::Formatter
   end
 
   def call payload
+    payload = payload.dup
     line = Array.new
 
     if time = payload.delete(:time)
@@ -41,9 +42,8 @@ class Logfmt::Formatter
       line << format(key, val)
     end
 
-    if tags && tags.is_a?(Array)
-      line << nil
-      line.concat tags
+    if tags && tags.is_a?(Array) && tags.size > 0
+      line << format(:tags, tags.join(','))
     end
 
     line.join(" ")
