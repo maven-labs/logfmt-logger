@@ -43,7 +43,7 @@ class Logfmt::Formatter
     end
 
     if tags && tags.is_a?(Array) && tags.size > 0
-      line << format(:tags, tags.join(','))
+      line << format(:tags, tags)
     end
 
     line.join(" ")
@@ -77,6 +77,8 @@ class Logfmt::Formatter
       val = val.to_json
     elsif val.is_a?(Float)
       val = Kernel.format('%.2f', val)
+    elsif val.is_a?(Array)
+      val = val.map { |sub_val| format_val(sub_val) }.join(',')
     else
       val = val.to_s
     end
