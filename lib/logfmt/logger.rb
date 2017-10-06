@@ -7,11 +7,13 @@ class Logfmt::Logger
 
   attr_accessor :level
 
-  def initialize io, formatter: Logfmt::Formatter.new, level: Logger::INFO, async: false
+  def initialize io, formatter: Logfmt::Formatter.new, level: Logger::INFO, async: false, context: {}
     @io = io
     @level = level
     @processor = (async ? AsyncProcessor : InlineProcessor).new(@io, formatter)
     @processor.start
+
+    @global_context = context
 
     @_silenced_key = "logfmt_silenced_#{object_id}".freeze
     @_context_key  = "logfmt_context_#{object_id}".freeze
@@ -20,17 +22,13 @@ class Logfmt::Logger
 
 
   def emit data
+    data = @global_context.merge(current_scope).merge(data)
     data[:tags] = Array(current_tags) + Array(data[:tags])
     data[:time] = Time.now
     @processor.push data
     nil
   rescue => e
     puts "Fuck: #{e.inspect}"
-  end
-
-  def method_missing(symbol, &block)
-    puts "Missing Method: #{symbol}"
-    super
   end
 
   def silence *args
@@ -59,6 +57,20 @@ class Logfmt::Logger
 
   def current_tags
     Thread.current[@_tags_key]
+  end
+
+  def scoped scope={}
+    prev = current_scope
+    Thread.current[@_context_key] = prev.merge(scope)
+    begin
+      yield
+    ensure
+      Thread.current[@_context_key] = prev
+    end
+  end
+
+  def current_scope
+    Thread.current[@_context_key] || {}
   end
 
   def stop
