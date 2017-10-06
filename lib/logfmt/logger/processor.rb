@@ -1,41 +1,27 @@
-require 'thread'
-
 class Logfmt::Logger::Processor
   def initialize io, formatter
     @io        = io
     @formatter = formatter
-    @queue     = ::Queue.new
   end
 
   def push payload
-    @queue.push payload
+    raise NotImplementedError
   end
 
   def start
-    @thread ||= Thread.new do
-      loop do
-        payload = @queue.pop
-        break if payload == :exit
-        begin
-          @io.puts @formatter.call(payload)
-        rescue => e
-          STDOUT.puts "Failed to log: #{e.inspect}"
-        end
-      end
-
-      begin
-        while @queue.size != 0
-          payload = @queue.pop(true)
-          @io.puts @formatter.call(payload)
-        end
-      rescue ThreadError
-        # Nothing left in the queue
-      end
-    end
+    # noop
   end
 
-  def stop wait=true
-    push(:exit)
-    @thread.join if wait
+  def stop(*args)
+    # noop
+  end
+
+  private
+  def write(payload)
+    begin
+      @io.puts @formatter.call(payload)
+    rescue => e
+      STDERR.puts "Failed to log error=#{e.inspect} payload=#{payload.inspect} from=#{e.backtrace[0]}"
+    end
   end
 end

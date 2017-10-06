@@ -1,5 +1,7 @@
 class Logfmt::Logger
   autoload :Processor, 'logfmt/logger/processor'
+  autoload :InlineProcessor, 'logfmt/logger/inline_processor'
+  autoload :AsyncProcessor, 'logfmt/logger/async_processor'
 
   EMPTY_HASH = Hash.new.freeze
 
@@ -7,10 +9,8 @@ class Logfmt::Logger
 
   def initialize io, formatter: Logfmt::Formatter.new, level: Logger::INFO
     @io = io
-    @formatter = formatter
     @level = level
-    @mutex = Mutex.new
-    @processor = Logfmt::Logger::Processor.new(@io, @formatter)
+    @processor = (async ? AsyncProcessor : InlineProcessor).new(@io, formatter)
     @processor.start
   end
 
@@ -69,6 +69,9 @@ class Logfmt::Logger
     Thread.current[:logfmt_tags]
   end
 
+  def stop
+    @processor.stop
+  end
 
 
   # LOGGING ----------------
