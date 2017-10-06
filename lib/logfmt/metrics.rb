@@ -10,8 +10,9 @@ class Logfmt::Metrics
   def time event, payload={}
     return unless block_given?
     start = Time.now
-    yield
+    result = yield
     emit_time(event, payload, start)
+    result
   rescue => exception
     emit_time(event, payload, start, exception)
     raise exception
