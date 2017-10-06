@@ -8,13 +8,23 @@ class Logfmt::Metrics
   end
 
   def time event, payload={}
+    return unless block_given?
     start = Time.now
-
     yield
+    emit_time(event, payload, start)
+  rescue => exception
+    emit_time(event, payload, start, exception)
+    raise exception
+  end
 
-  ensure
+  private
+  def emit_time(event, payload, start, exception=nil)
     finish   = Time.now
     duration = (finish - start) * 1000.0
-    @log.emit( payload.merge(event: event, duration: duration) )
+    payload = payload.merge(event: event, duration: duration)
+    if exception != nil
+      payload = payload.merge(exception: exception.class, exception_msg: exception.message)
+    end
+    @log.emit( payload )
   end
 end
