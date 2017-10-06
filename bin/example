@@ -1,15 +1,52 @@
 #!/usr/bin/env ruby
+# STDOUT.sync = true
 
 $:.unshift File.expand_path("../../lib", __FILE__)
 require 'logfmt-logger'
 
+level     = Logger.const_get(ENV.fetch('LOG_LEVEL', 'INFO').upcase)
+level_key = ENV.fetch('LOG_LEVEL_KEY', 'level')
+async     = ENV['LOG_ASYNC'] == '1'
+justify   = ENV['LOG_JUSTIFY'] == '1'
 
-log = Logfmt::Logger.new STDOUT, formatter: Logfmt::Formatter.new(justify: true, level_key: "LEVEL")
+formatter = Logfmt::Formatter.new(justify: justify, level_key: level_key)
+log       = Logfmt::Logger.new(STDOUT, formatter: formatter, level: level, async: async)
+metrics   = Logfmt::Metrics.new(log)
 
-log.info "Hi"
+at_exit { log.stop }
+
+
+log.info "Hello World!"
 log.info "A" * 100, user_id: 1
 
 log.info "context", user_id: 1
 log.debug "line", user_id: 1
 log.debug "up", user_id: 1
 log.debug "Hello, World!", user_id: 1
+
+log.tagged "foo" do
+  log.info "tag level 1"
+  log.tagged "bar" do
+    log.info "tag level 2", foo: 1, bar: "baz"
+  end
+  log.info "tag level 1"
+end
+
+log.silence do
+  log.info "nope..."
+end
+
+metrics.time "timer.1" do
+  sleep rand
+end
+
+log.tagged("bomb") do
+  begin
+    metrics.time "timer.2" do
+      log.info("tick")
+      sleep rand
+      raise "Oh No!!!"
+    end
+  rescue
+  end
+end
