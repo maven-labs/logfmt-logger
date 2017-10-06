@@ -7,18 +7,15 @@ class Logfmt::Logger
 
   attr_accessor :level
 
-  def initialize io, formatter: Logfmt::Formatter.new, level: Logger::INFO
+  def initialize io, formatter: Logfmt::Formatter.new, level: Logger::INFO, async: false
     @io = io
     @level = level
     @processor = (async ? AsyncProcessor : InlineProcessor).new(@io, formatter)
     @processor.start
-  end
 
-  def formatter
-    @formatter
-  end
-
-  def formatter= val
+    @_silenced_key = "logfmt_silenced_#{object_id}".freeze
+    @_context_key  = "logfmt_context_#{object_id}".freeze
+    @_tags_key     = "logfmt_tags_#{object_id}".freeze
   end
 
 
@@ -31,42 +28,37 @@ class Logfmt::Logger
     puts "Fuck: #{e.inspect}"
   end
 
-
   def method_missing(symbol, &block)
     puts "Missing Method: #{symbol}"
     super
   end
 
-  def extend *args
-    # ignore
-  end
-
   def silence *args
-    prev = Thread.current[:logfmt_silenced]
-    Thread.current[:logfmt_silenced] = true
+    prev = Thread.current[@_silenced_key]
+    Thread.current[@_silenced_key] = true
     begin
       yield
     ensure
-      Thread.current[:logfmt_silenced] = prev
+      Thread.current[@_silenced_key] = prev
     end
   end
 
   def silenced?
-    !!Thread.current[:logfmt_silenced]
+    !!Thread.current[@_silenced_key]
   end
 
   def tagged *tags
     prev = current_tags
-    Thread.current[:logfmt_tags] = Array(prev) + Array(tags)
+    Thread.current[@_tags_key] = Array(prev) + Array(tags)
     begin
       yield
     ensure
-      Thread.current[:logfmt_tags] = prev
+      Thread.current[@_tags_key] = prev
     end
   end
 
   def current_tags
-    Thread.current[:logfmt_tags]
+    Thread.current[@_tags_key]
   end
 
   def stop
