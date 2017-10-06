@@ -7,7 +7,7 @@ class WidgetsController < ApplicationController
     @widgets = MLog.time "widget.all" do
       Widget.all
     end
-    MLog.event "Widgets!!!", count: @widgets.count
+    SLog.info "Widgets!!!", count: @widgets.count
   end
 
   # GET /widgets/1
@@ -31,6 +31,7 @@ class WidgetsController < ApplicationController
 
     respond_to do |format|
       if @widget.save
+        MLog.event('widget.created', widget: @widget.id)
         format.html { redirect_to @widget, notice: 'Widget was successfully created.' }
         format.json { render :show, status: :created, location: @widget }
       else
@@ -45,6 +46,7 @@ class WidgetsController < ApplicationController
   def update
     respond_to do |format|
       if @widget.update(widget_params)
+        MLog.event('widget.updated', widget: @widget.id)
         format.html { redirect_to @widget, notice: 'Widget was successfully updated.' }
         format.json { render :show, status: :ok, location: @widget }
       else
@@ -58,6 +60,7 @@ class WidgetsController < ApplicationController
   # DELETE /widgets/1.json
   def destroy
     @widget.destroy
+    MLog.event('widget.destroyed', widget: @widget.id)
     respond_to do |format|
       format.html { redirect_to widgets_url, notice: 'Widget was successfully destroyed.' }
       format.json { head :no_content }
